@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Usulan;
 use App\Models\Unit;
-use App\Models\Lokasi; // hanya 1 model lokasi
+use App\Models\Location; // hanya 1 model Location
 use Illuminate\Support\Facades\Storage;
 
 class UsulanController extends Controller
@@ -19,7 +19,7 @@ class UsulanController extends Controller
     public function create()
 {
     $units = Unit::all();
-    $lantais = Lokasi::whereNull('parent_id')->get(); // Lantai = parent utama
+    $lantais = Location::whereNull('parent_id')->where('level','lantai')->get(); // Lantai = parent utama
 
     return view('usulan.create', compact('units', 'lantais'));
 }
@@ -36,11 +36,11 @@ class UsulanController extends Controller
             'jumlah' => 'required|numeric|min:1',
             'satuan' => 'required|string',
 
-            // Field tambahan untuk lokasi dan unit
-            'unit_pengusul' => 'required|string|max:255',
-            'lantai_id' => 'required|exists:lokasis,id',
-            'ruang_id' => 'required|exists:lokasis,id',
-            'sub_ruang_id' => 'required|exists:lokasis,id',
+            // Field tambahan untuk Location dan unit
+            'unit_id' => 'required|string|max:255',
+            'lantai_id' => 'required|exists:Locations,id',
+            'ruang_id' => 'required|exists:Locations,id',
+            'sub_ruang_id' => 'required|exists:Locations,id',
         ]);
 
         // Upload gambar jika ada
@@ -55,4 +55,5 @@ class UsulanController extends Controller
 
         return redirect()->route('usulan.create')->with('success', 'Usulan berhasil dikirim.');
     }
+    
 }

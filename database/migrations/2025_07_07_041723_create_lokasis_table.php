@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-       Schema::create('lokasis', function (Blueprint $table) {
+       Schema::create('locations', function (Blueprint $table) {
         $table->id();
         $table->string('nama'); // Nama lantai, ruang, atau sub ruang
         $table->enum('level', ['lantai', 'ruang', 'sub_ruang']); // Jenis level

@@ -24,24 +24,22 @@ class Usulan extends Model
     ];
 
     public function unit()
-{
-    return $this->belongsTo(\App\Models\Unit::class, 'unit_id');
-}
+    {
+        return $this->belongsTo(\App\Models\Unit::class, 'unit_id');
+    }
 
-public function lantai()
-{
-    return $this->belongsTo(\App\Models\Lokasi::class, 'lantai_id');
-}
+    public function lantai()
+    {
+        return $this->belongsTo(Location::class, 'lantai_id');
+    }
 
-public function ruang()
-{
-    return $this->belongsTo(\App\Models\Lokasi::class, 'ruang_id');
-}
+    public function ruang()
+    {
+        return $this->belongsTo(Location::class, 'ruang_id');
+    }
 
-public function subRuang()
-{
-    return $this->belongsTo(\App\Models\Lokasi::class, 'sub_ruang_id');
-}
-
-
+    public function subRuang()
+    {
+        return $this->belongsTo(Location::class, 'sub_ruang_id');
+    }
 }

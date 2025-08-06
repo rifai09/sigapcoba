@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UsulanController;
 use App\Http\Controllers\PersetujuanController;
-use App\Http\Controllers\LokasiController;
+use App\Http\Controllers\LocationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -33,7 +33,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/persetujuan/{id}/tolak', [PersetujuanController::class, 'tolak'])->name('persetujuan.tolak');
 
     // ✅ AJAX route untuk dropdown lokasi
-    Route::get('/get-lantai', [LokasiController::class, 'getLantai']);
-    Route::get('/get-ruang/{lantai_id}', [LokasiController::class, 'getRuang']);
-    Route::get('/get-subruang/{ruang_id}', [LokasiController::class, 'getSubRuang']);
+    Route::get('/get-lantai', [LocationController::class, 'getLantai']);
+    Route::get('/get-ruang/{lantai_id}', [LocationController::class, 'getRuang']);
+    Route::get('/get-subruang/{ruang_id}', [LocationController::class, 'getSubRuang']);
 });

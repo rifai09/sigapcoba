@@ -4,13 +4,30 @@ namespace App\Http\Controllers;
 
 use App\Models\Usulan;
 use Illuminate\Http\Request;
+use App\Models\Location;
+use Yajra\DataTables\Facades\DataTables;
+
 
 class PersetujuanController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $usulans = \App\Models\Usulan::with(['lantai', 'ruang', 'subRuang'])->latest()->get();
-        return view('persetujuan.index', compact('usulans'));
+        if ($request->ajax()) {
+        $data = Usulan::with(['unit', 'lantai', 'ruang', 'subRuang'])->latest();
+
+        return DataTables::of($data)
+            ->addColumn('unit', fn($row) => $row->unit->nama ?? '-')
+            ->addColumn('lantai', fn($row) => $row->lantai->nama ?? '-')
+            ->addColumn('ruang', fn($row) => $row->ruang->nama ?? '-')
+            ->addColumn('sub_ruang', fn($row) => $row->subRuang->nama ?? '-')
+            ->addColumn('aksi', function ($row) {
+                return view('persetujuan._action', compact('row'))->render();
+            })
+            ->rawColumns(['aksi'])
+            ->make(true);
+    }
+     
+        return view('persetujuan.index');
     }
 
 
