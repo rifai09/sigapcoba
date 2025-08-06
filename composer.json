@@ -10,7 +10,9 @@
         "laravel/fortify": "^1.7",
         "laravel/framework": "^11.0",
         "laravel/tinker": "^2.5",
-        "laravel/ui": "^4.0"
+        "laravel/ui": "^4.0",
+        "maatwebsite/excel": "^1.1",
+        "phpoffice/phpspreadsheet": "^4.5"
     },
     "require-dev": {
         "spatie/laravel-ignition": "^2.0",

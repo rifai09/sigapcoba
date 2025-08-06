@@ -4,26 +4,28 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Usulan;
-use Illuminate\Support\Facades\Auth;
+use App\Models\Unit;
+use App\Models\Lokasi; // hanya 1 model lokasi
 use Illuminate\Support\Facades\Storage;
 
 class UsulanController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
     public function __construct()
     {
         $this->middleware('auth');
     }
 
+    // ✅ FORM USULAN
     public function create()
-    {
-        return view('usulan.create');
-    }
+{
+    $units = Unit::all();
+    $lantais = Lokasi::whereNull('parent_id')->get(); // Lantai = parent utama
 
+    return view('usulan.create', compact('units', 'lantais'));
+}
+
+
+    // ✅ SIMPAN USULAN
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -33,17 +35,12 @@ class UsulanController extends Controller
             'gambar' => 'nullable|image|max:2048',
             'jumlah' => 'required|numeric|min:1',
             'satuan' => 'required|string',
-            'harga_pagu' => 'required|numeric|min:0',
-            'perkiraan_harga' => 'required|numeric|min:0',
-            'penjual_1' => 'nullable|string',
-            'harga_penjual_1' => 'nullable|numeric|min:0',
-            'link_penjual_1' => 'nullable|url',
-            'penjual_2' => 'nullable|string',
-            'harga_penjual_2' => 'nullable|numeric|min:0',
-            'link_penjual_2' => 'nullable|url',
-            'penjual_3' => 'nullable|string',
-            'harga_penjual_3' => 'nullable|numeric|min:0',
-            'link_penjual_3' => 'nullable|url',
+
+            // Field tambahan untuk lokasi dan unit
+            'unit_pengusul' => 'required|string|max:255',
+            'lantai_id' => 'required|exists:lokasis,id',
+            'ruang_id' => 'required|exists:lokasis,id',
+            'sub_ruang_id' => 'required|exists:lokasis,id',
         ]);
 
         // Upload gambar jika ada
@@ -51,6 +48,7 @@ class UsulanController extends Controller
             $path = $request->file('gambar')->store('gambar_usulan', 'public');
             $validated['gambar'] = $path;
         }
+
         $validated['status'] = 'menunggu';
 
         Usulan::create($validated);

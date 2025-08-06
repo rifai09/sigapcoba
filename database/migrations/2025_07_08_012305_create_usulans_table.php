@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up()
     {
         Schema::create('usulans', function (Blueprint $table) {
@@ -20,32 +17,24 @@ return new class extends Migration
 
             $table->integer('jumlah');
             $table->string('satuan');
-            $table->bigInteger('harga_pagu');
-            $table->bigInteger('perkiraan_harga');
 
-            // Penjual 1
-            $table->string('penjual_1')->nullable();
-            $table->bigInteger('harga_penjual_1')->nullable();
-            $table->string('link_penjual_1')->nullable();
+            $table->unsignedBigInteger('unit_id');
+            $table->unsignedBigInteger('lantai_id')->nullable();
+            $table->unsignedBigInteger('ruang_id')->nullable();
+            $table->unsignedBigInteger('sub_ruang_id')->nullable();
 
-            // Penjual 2
-            $table->string('penjual_2')->nullable();
-            $table->bigInteger('harga_penjual_2')->nullable();
-            $table->string('link_penjual_2')->nullable();
+            // Relasi ke tabel lain
+            $table->foreign('unit_id')->references('id')->on('units')->onDelete('cascade');
+            $table->foreign('lantai_id')->references('id')->on('lokasis')->onDelete('set null');
+            $table->foreign('ruang_id')->references('id')->on('lokasis')->onDelete('set null');
+            $table->foreign('sub_ruang_id')->references('id')->on('lokasis')->onDelete('set null');
 
-            // Penjual 3
-            $table->string('penjual_3')->nullable();
-            $table->bigInteger('harga_penjual_3')->nullable();
-            $table->string('link_penjual_3')->nullable();
 
-            $table->string('status')->default('menunggu'); // default status
+            $table->string('status')->default('menunggu');
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('usulans');

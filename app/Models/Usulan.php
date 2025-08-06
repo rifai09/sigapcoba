@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Usulan extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'nama_barang',
         'spesifikasi',
@@ -15,17 +16,32 @@ class Usulan extends Model
         'gambar',
         'jumlah',
         'satuan',
-        'harga_pagu',
-        'perkiraan_harga',
-        'penjual_1',
-        'harga_penjual_1',
-        'link_penjual_1',
-        'penjual_2',
-        'harga_penjual_2',
-        'link_penjual_2',
-        'penjual_3',
-        'harga_penjual_3',
-        'link_penjual_3',
-        'status',
+        'unit_id',         // <-- diganti dari unit_pengusul
+        'lantai_id',
+        'ruang_id',
+        'sub_ruang_id',
+        'status'
     ];
+
+    public function unit()
+{
+    return $this->belongsTo(\App\Models\Unit::class, 'unit_id');
+}
+
+public function lantai()
+{
+    return $this->belongsTo(\App\Models\Lokasi::class, 'lantai_id');
+}
+
+public function ruang()
+{
+    return $this->belongsTo(\App\Models\Lokasi::class, 'ruang_id');
+}
+
+public function subRuang()
+{
+    return $this->belongsTo(\App\Models\Lokasi::class, 'sub_ruang_id');
+}
+
+
 }

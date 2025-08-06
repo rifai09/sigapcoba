@@ -9,9 +9,10 @@ class PersetujuanController extends Controller
 {
     public function index()
     {
-        $usulans = Usulan::orderBy('created_at', 'desc')->get();
+        $usulans = \App\Models\Usulan::with(['lantai', 'ruang', 'subRuang'])->latest()->get();
         return view('persetujuan.index', compact('usulans'));
     }
+
 
     public function setujui($id)
     {
