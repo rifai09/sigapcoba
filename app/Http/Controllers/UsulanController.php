@@ -19,7 +19,7 @@ class UsulanController extends Controller
     public function create()
 {
     $units = Unit::all();
-    $lantais = Location::whereNull('parent_id')->where('level','lantai')->get(); // Lantai = parent utama
+    $lantais = Location::whereNull('parent_id')->get(); // Lantai = parent utama
 
     return view('usulan.create', compact('units', 'lantais'));
 }
@@ -34,13 +34,14 @@ class UsulanController extends Controller
             'keterangan' => 'nullable|string',
             'gambar' => 'nullable|image|max:2048',
             'jumlah' => 'required|numeric|min:1',
+            'harga_perkiraan' => 'nullable|numeric|min:0',
             'satuan' => 'required|string',
 
             // Field tambahan untuk Location dan unit
             'unit_id' => 'required|string|max:255',
-            'lantai_id' => 'required|exists:Locations,id',
-            'ruang_id' => 'required|exists:Locations,id',
-            'sub_ruang_id' => 'required|exists:Locations,id',
+            'lantai_id' => 'required',
+            'ruang_id' => 'required',
+            'sub_ruang_id' => 'required',
         ]);
 
         // Upload gambar jika ada

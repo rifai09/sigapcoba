@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Location extends Model
 {
+    protected $table = 'locations'; // Pastikan nama tabel sesuai dengan yang ada di database
     use HasFactory;
 
     protected $fillable = ['nama', 'level', 'parent_id'];

@@ -12,14 +12,12 @@ class DatabaseSeeder extends Seeder
      * @return void
      */
     public function run(): void
-    {
-        //     $this->call([
-        //         \Database\Seeders\LokasiExcelSeeder::class,
-        //     ]);
-        $this->call([
-            LocationSeeder::class,
-            UnitSeeder::class,
-            UserSeeder::class
-        ]);
-    }
+{
+    $this->call([
+        \Database\Seeders\LokasiExcelSeeder::class,
+    ]);
+    $this->call([
+    UnitSeeder::class,
+]);
+}
 }

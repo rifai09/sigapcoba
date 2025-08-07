@@ -3,10 +3,10 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Lokasi;
+use App\Models\Location;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
-class LokasiExcelSeeder extends Seeder
+class LocationExcelSeeder extends Seeder
 {
     public function run(): void
     {
@@ -26,14 +26,14 @@ class LokasiExcelSeeder extends Seeder
             $namaSubRuang = isset($row[2]) ? trim($row[2]) : null;
 
             // Lantai
-            $lantai = Lokasi::firstOrCreate([
+            $lantai = Location::firstOrCreate([
                 'nama' => $namaLantai,
                 'level' => 'lantai',
                 'parent_id' => null
             ]);
 
             // Ruang
-            $ruang = Lokasi::firstOrCreate([
+            $ruang = Location::firstOrCreate([
                 'nama' => $namaRuang,
                 'level' => 'ruang',
                 'parent_id' => $lantai->id
@@ -41,7 +41,7 @@ class LokasiExcelSeeder extends Seeder
 
             // Sub Ruang (jika ada)
             if (!empty($namaSubRuang)) {
-                Lokasi::firstOrCreate([
+                Location::firstOrCreate([
                     'nama' => $namaSubRuang,
                     'level' => 'sub_ruang',
                     'parent_id' => $ruang->id

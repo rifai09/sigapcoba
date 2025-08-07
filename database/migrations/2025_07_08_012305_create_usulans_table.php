@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('gambar')->nullable();
 
             $table->integer('jumlah');
+            $table->Integer('harga_perkiraan')->nullable();
             $table->string('satuan');
 
             $table->unsignedBigInteger('unit_id');

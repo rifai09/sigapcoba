@@ -15,8 +15,9 @@ class Usulan extends Model
         'keterangan',
         'gambar',
         'jumlah',
+        'harga_perkiraan',
         'satuan',
-        'unit_id',         // <-- diganti dari unit_pengusul
+        'unit_id',
         'lantai_id',
         'ruang_id',
         'sub_ruang_id',

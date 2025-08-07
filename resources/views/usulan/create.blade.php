@@ -19,6 +19,20 @@
                     <form action="{{ route('usulan.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <div class="card-body">
+                            <!-- Unit Pengusul -->
+                            <div class="form-group">
+                                <label for="unit_pengusul">Unit Pengusul</label>
+                                <select name="unit_id" id="unit_pengusul" class="form-control select2 @error('unit_pengusul') is-invalid @enderror" required>
+                                    <option value="">Pilih Unit</option>
+                                    @foreach($units as $unit)
+                                    <option value="{{ $unit->id }}" {{ old('unit_pengusul') == $unit->id ? 'selected' : '' }}>{{ $unit->nama }}</option>
+                                    @endforeach
+                                </select>
+                                @error('unit_pengusul')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <hr>
                             <!-- Nama Barang/Jasa -->
                             <div class="form-group">
                                 <label for="nama_barang">Nama Barang/Jasa</label>
@@ -60,15 +74,24 @@
 
                             <!-- Jumlah dan Satuan -->
                             <div class="form-row">
-                                <div class="form-group col-md-6">
+                                <div class="form-group col-md-4">
                                     <label for="jumlah">Jumlah</label>
-                                    <input type="text" id="jumlah_display" class="form-control @error('jumlah') is-invalid @enderror" value="{{ old('jumlah') }}" required>
+                                    <input type="text" id="jumlah_display" class="form-control @error('jumlah') is-invalid @enderror" onkeyup="formatHarga()" value="{{ old('jumlah') }}" required>
                                     <input type="hidden" name="jumlah" id="jumlah" value="{{ old('jumlah') }}">
                                     @error('jumlah')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
-                                <div class="form-group col-md-6">
+                                <div class="form-group col-md-4">
+                                    <label for="harga_perkiraan">Harga Perkiraan (Rp)</label>
+                                    <input type="text" id="harga_perkiraan_display" class="form-control @error('harga_perkiraan') is-invalid @enderror" onkeyup="formatHarga()" value="{{ old('harga_perkiraan') }}" required>
+                                    <input type="hidden" name="harga_perkiraan" id="harga_perkiraan" value="{{ old('harga_perkiraan') }}">
+                                    @error('harga_perkiraan')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div class="form-group col-md-4">
                                     <label for="satuan">Satuan</label>
                                     <input type="text" name="satuan" class="form-control @error('satuan') is-invalid @enderror" value="{{ old('satuan') }}" required>
                                     @error('satuan')
@@ -76,21 +99,9 @@
                                     @enderror
                                 </div>
                             </div>
-
-                            <!-- Unit Pengusul -->
                             <div class="form-group">
-                                <label for="unit_pengusul">Unit Pengusul</label>
-                                <select name="unit_id" id="unit_pengusul" class="form-control select2 @error('unit_pengusul') is-invalid @enderror" required>
-                                    <option value="">Pilih Unit</option>
-                                    @foreach($units as $unit)
-                                    <option value="{{ $unit->id }}" {{ old('unit_pengusul') == $unit->id ? 'selected' : '' }}>{{ $unit->nama }}</option>
-                                    @endforeach
-                                </select>
-                                @error('unit_pengusul')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                <p id="total_perkiraan" class="font-weight-bold">Total Perkiraan: Rp 0</p>
                             </div>
-
                             <hr>
                             <h5>Detail Penempatan</h5>
                             <div class="form-row">
@@ -164,6 +175,19 @@
         return parseInt(str.replace(/[^\d]/g, '')) || 0;
     }
 
+    function formatHarga() {
+        const displayInput = document.getElementById('harga_perkiraan_display');
+        const hiddenInput = document.getElementById('harga_perkiraan');
+
+        let rawValue = displayInput.value.replace(/[^\d]/g, '');
+        rawValue = parseInt(rawValue) || 0;
+
+        displayInput.value = rawValue.toLocaleString('id-ID');
+        hiddenInput.value = rawValue;
+        hitungTotal();
+    }
+
+
     function setupFormattedInput(displayId, hiddenId) {
         const displayInput = document.getElementById(displayId);
         const hiddenInput = document.getElementById(hiddenId);
@@ -174,50 +198,55 @@
             hiddenInput.value = rawValue;
         });
     }
+    // ✅ Inisialisasi formatting untuk kolom jumlah dan harga perkiraan
     setupFormattedInput('jumlah_display', 'jumlah');
 
-    // Cascading Dropdown Logic
-    $(document).ready(function() {
-        // Inisialisasi Select2
-        // $('.select2').select2({
-        //     theme: 'bootstrap4',
-        //     placeholder: "Pilih atau ketik",
-        //     allowClear: true
-        // });
+    function hitungTotal() {
+        const jumlah = parseInt(document.getElementById('jumlah').value) || 0;
+        const harga = parseInt(document.getElementById('harga_perkiraan').value) || 0;
+        const total = jumlah * harga;
 
-        // Muat data lantai saat pertama kali
-        $.get('/get-lantai', function(data) {
-            $('#lantai').html('<option value="">Pilih Lantai</option>');
+        console.log('Total:', total); // Debug
+        document.getElementById('total_perkiraan').textContent = 'Total Perkiraan: Rp ' + total.toLocaleString('id-ID');
+    }
+
+
+    setupFormattedInput('jumlah_display', 'jumlah', hitungTotal);
+    setupFormattedInput('perkiraan_harga_display', 'perkiraan_harga', hitungTotal);
+
+
+    // Muat data lantai saat pertama kali
+    $.get('/get-lantai', function(data) {
+        $('#lantai').html('<option value="">Pilih Lantai</option>');
+        data.forEach(function(item) {
+            $('#lantai').append(`<option value="${item.id}">${item.nama}</option>`);
+        });
+    });
+
+    // Saat lantai berubah, muat ruang
+    $('#lantai').on('change', function() {
+        let lantaiId = $(this).val();
+        $('#ruang').html('<option>Memuat...</option>');
+        $('#sub_ruang').html('<option value="">Pilih Sub Ruang</option>');
+        $.get('/get-ruang/' + lantaiId, function(data) {
+            $('#ruang').html('<option value="">Pilih Ruang</option>');
             data.forEach(function(item) {
-                $('#lantai').append(`<option value="${item.id}">${item.nama}</option>`);
+                $('#ruang').append(`<option value="${item.id}">${item.nama}</option>`);
             });
+            $('#ruang').trigger('change');
         });
+    });
 
-        // Saat lantai berubah, muat ruang
-        $('#lantai').on('change', function() {
-            let lantaiId = $(this).val();
-            $('#ruang').html('<option>Memuat...</option>');
+    // Saat ruang berubah, muat sub ruang
+    $('#ruang').on('change', function() {
+        let ruangId = $(this).val();
+        $('#sub_ruang').html('<option>Memuat...</option>');
+        $.get('/get-subruang/' + ruangId, function(data) {
             $('#sub_ruang').html('<option value="">Pilih Sub Ruang</option>');
-            $.get('/get-ruang/' + lantaiId, function(data) {
-                $('#ruang').html('<option value="">Pilih Ruang</option>');
-                data.forEach(function(item) {
-                    $('#ruang').append(`<option value="${item.id}">${item.nama}</option>`);
-                });
-                $('#ruang').trigger('change');
+            data.forEach(function(item) {
+                $('#sub_ruang').append(`<option value="${item.id}">${item.nama}</option>`);
             });
-        });
-
-        // Saat ruang berubah, muat sub ruang
-        $('#ruang').on('change', function() {
-            let ruangId = $(this).val();
-            $('#sub_ruang').html('<option>Memuat...</option>');
-            $.get('/get-subruang/' + ruangId, function(data) {
-                $('#sub_ruang').html('<option value="">Pilih Sub Ruang</option>');
-                data.forEach(function(item) {
-                    $('#sub_ruang').append(`<option value="${item.id}">${item.nama}</option>`);
-                });
-                $('#sub_ruang').trigger('change');
-            });
+            $('#sub_ruang').trigger('change');
         });
     });
 </script>
