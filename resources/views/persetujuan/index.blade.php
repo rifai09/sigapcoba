@@ -156,41 +156,46 @@
                 ]
             });
         });
+          $(document).on('click', '.btn-detail', function () {
+        $('#nama').text($(this).data('nama'));
+        $('#spesifikasi').text($(this).data('spesifikasi'));
+        $('#keterangan').text($(this).data('keterangan'));
+        $('#jumlah-satuan').text($(this).data('jumlah') + ' ' + $(this).data('satuan'));
+        $('#unit_pengusul').text($(this).data('unit'));
+        $('#lantai').text($(this).data('lantai'));
+        $('#ruang').text($(this).data('ruang'));
+        $('#sub_ruang').text($(this).data('sub_ruang'));
+
+        const status = $(this).data('status');
+        $('#status').text(status);
+
+        const badgeClass = status === 'Disetujui' ? 'badge-success' :
+            status === 'Ditolak' ? 'badge-danger' : 'badge-warning';
+        $('#status').attr('class', 'badge ' + badgeClass);
+
+        // Tampilkan gambar jika ada
+        const gambar = $(this).data('gambar');
+        if (gambar) {
+            const img = $('<img>', {
+                src: "{{ asset('storage') }}/" + gambar,
+                alt: 'Gambar Barang',
+                class: 'img-fluid',
+                css: { maxHeight: '200px' }
+            });
+            $('#gambar').html(img);
+        } else {
+            $('#gambar').html('Tidak ada gambar tersedia');
+        }
+
+        // Set action form persetujuan
+        const id = $(this).data('id');
+        $('#form-setujui').attr('action', '/persetujuan/' + id + '/setujui');
+        $('#form-tolak').attr('action', '/persetujuan/' + id + '/tolak');
+    });
     </script>
     @endpush
     <!-- Script -->
     <script>
-        document.querySelectorAll('.btn-detail').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                document.getElementById('nama').textContent = this.dataset.nama;
-                document.getElementById('spesifikasi').textContent = this.dataset.spesifikasi;
-                document.getElementById('keterangan').textContent = this.dataset.keterangan;
-                document.getElementById('jumlah-satuan').textContent = this.dataset.jumlah + ' ' + this.dataset.satuan;
-                document.getElementById('unit_pengusul').textContent = this.dataset.unit;
-                document.getElementById('lantai').textContent = this.dataset.lantai;
-                document.getElementById('ruang').textContent = this.dataset.ruang;
-                document.getElementById('sub_ruang').textContent = this.dataset.sub_ruang;
-                document.getElementById('status').textContent = this.dataset.status;
-
-                const badgeClass = this.dataset.status === 'Disetujui' ? 'badge-success' :
-                    this.dataset.status === 'Ditolak' ? 'badge-danger' : 'badge-warning';
-                document.getElementById('status').className = 'badge ' + badgeClass;
-
-                if (this.dataset.gambar) {
-                    const img = document.createElement('img');
-                    img.src = "{{ asset('storage') }}/" + this.dataset.gambar;
-                    img.alt = 'Gambar Barang';
-                    img.className = 'img-fluid';
-                    img.style.maxHeight = '200px';
-                    document.getElementById('gambar').innerHTML = '';
-                    document.getElementById('gambar').appendChild(img);
-                } else {
-                    document.getElementById('gambar').innerHTML = 'Tidak ada gambar tersedia';
-                }
-
-                document.getElementById('form-setujui').action = "/persetujuan/" + this.dataset.id + "/setujui";
-                document.getElementById('form-tolak').action = "/persetujuan/" + this.dataset.id + "/tolak";
-            });
-        });
+      
     </script>
     @endsection

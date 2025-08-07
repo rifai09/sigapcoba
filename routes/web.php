@@ -16,7 +16,7 @@ use App\Http\Controllers\LocationController;
 */
 
 Route::get('/', function () {
-    return view('welcome');
+     return redirect()->route('login'); 
 });
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
