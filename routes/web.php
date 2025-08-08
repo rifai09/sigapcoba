@@ -26,6 +26,7 @@ Route::middleware(['auth'])->group(function () {
     // Form Usulan
     Route::get('/usulan/create', [UsulanController::class, 'create'])->name('usulan.create');
     Route::post('/usulan/store', [UsulanController::class, 'store'])->name('usulan.store');
+    Route::post('/usulan/setujui', [UsulanController::class, 'setujui'])->name('usulan.setujui');
 
     // Persetujuan
     Route::get('/persetujuan', [PersetujuanController::class, 'index'])->name('persetujuan.index');

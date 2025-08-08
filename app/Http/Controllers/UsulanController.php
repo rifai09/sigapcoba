@@ -7,6 +7,11 @@ use App\Models\Usulan;
 use App\Models\Unit;
 use App\Models\Location; // hanya 1 model Location
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+use App\Models\LogUsulan;
+use App\Models\ParameterValues;
+use Illuminate\Support\Facades\Auth;
 
 class UsulanController extends Controller
 {
@@ -18,6 +23,7 @@ class UsulanController extends Controller
     // ✅ FORM USULAN
     public function create()
 {
+    
     $units = Unit::all();
     $lantais = Location::whereNull('parent_id')->get(); // Lantai = parent utama
 
@@ -56,5 +62,42 @@ class UsulanController extends Controller
 
         return redirect()->route('usulan.create')->with('success', 'Usulan berhasil dikirim.');
     }
+    public function setujui(Request $request)
+{
+    $request->validate([
+        'usulan_id' => 'required|exists:usulan,id',
+        'keterangan' => 'required|string',
+        'urgensi' => 'required|in:urgen,not_urgent',
+    ]);
+
+    DB::beginTransaction();
+    try {
+        // Update data di tabel usulan
+        $usulan = Usulan::findOrFail($request->usulan_id);
+        $usulan->status = 'disetujui';
+        $usulan->keterangan_persetujuan = $request->keterangan;
+        $usulan->urgensi = $request->urgensi;
+        $usulan->approved_by =Auth::user()->id;
+        $usulan->approved_at = now();
+        $usulan->save();
+
+        // Simpan log
+        LogUsulan::create([
+            'usulan_id' => $usulan->id,
+            'user_id' => Auth::user()->id,
+            'action' => 'disetujui',
+            'keterangan' => $request->keterangan,
+            'created_at' => now(),
+        ]);
+
+        DB::commit();
+
+        return response()->json(['message' => 'Usulan berhasil disetujui.']);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return response()->json(['message' => 'Gagal menyetujui usulan.'], 500);
+    }
+}
     
 }

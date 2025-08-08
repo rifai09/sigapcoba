@@ -9,6 +9,8 @@ class Usulan extends Model
 {
     use HasFactory;
 
+    protected $table = 'usulans';
+
     protected $fillable = [
         'nama_barang',
         'spesifikasi',
