@@ -14,7 +14,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
 {
     $this->call([
-        \Database\Seeders\LokasiExcelSeeder::class,
+       \Database\Seeders\LocationExcelSeeder::class,
     ]);
     $this->call([
     UnitSeeder::class,

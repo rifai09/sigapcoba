@@ -3,17 +3,20 @@
 namespace App\Providers;
 
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
-use Illuminate\Support\Facades\Gate;
+// Tambahan import:
+use App\Models\Usulan;
+use App\Policies\UsulanPolicy;
 
 class AuthServiceProvider extends ServiceProvider
 {
     /**
      * The policy mappings for the application.
      *
-     * @var array
+     * @var array<class-string, class-string>
      */
     protected $policies = [
-        // 'App\Models\Model' => 'App\Policies\ModelPolicy',
+        // Model => Policy
+        Usulan::class => UsulanPolicy::class,
     ];
 
     /**
@@ -23,8 +26,9 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        // Untuk Laravel <=8 masih OK memanggil:
         $this->registerPolicies();
 
-        //
+        // Tambahkan Gate khusus di sini kalau diperlukan.
     }
 }

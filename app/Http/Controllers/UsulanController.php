@@ -2,102 +2,86 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Http\Requests\UsulanStoreRequest;
 use App\Models\Usulan;
 use App\Models\Unit;
-use App\Models\Location; // hanya 1 model Location
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
-use App\Models\LogUsulan;
-use App\Models\ParameterValues;
+use App\Models\Location;
+use App\Models\User;
+use App\Notifications\UsulanNotification;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class UsulanController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth');
-    }
-
-    // ✅ FORM USULAN
+    /**
+     * Form create usulan (role: staf, admin).
+     * Mengirimkan dropdown Unit dan Lantai ke view.
+     * - Lantai diambil adaptif: cek kolom 'jenis' | 'level' | 'type' | fallback parent_id NULL
+     */
     public function create()
-{
-    
-    $units = Unit::all();
-    $lantais = Location::whereNull('parent_id')->get(); // Lantai = parent utama
-
-    return view('usulan.create', compact('units', 'lantais'));
-}
-
-
-    // ✅ SIMPAN USULAN
-    public function store(Request $request)
     {
-        $validated = $request->validate([
-            'nama_barang' => 'required|string|max:255',
-            'spesifikasi' => 'required|string',
-            'keterangan' => 'nullable|string',
-            'gambar' => 'nullable|image|max:2048',
-            'jumlah' => 'required|numeric|min:1',
-            'harga_perkiraan' => 'nullable|numeric|min:0',
-            'satuan' => 'required|string',
+        $units = Unit::orderBy('nama')->get(['id', 'nama']);
 
-            // Field tambahan untuk Location dan unit
-            'unit_id' => 'required|string|max:255',
-            'lantai_id' => 'required',
-            'ruang_id' => 'required',
-            'sub_ruang_id' => 'required',
-        ]);
-
-        // Upload gambar jika ada
-        if ($request->hasFile('gambar')) {
-            $path = $request->file('gambar')->store('gambar_usulan', 'public');
-            $validated['gambar'] = $path;
+        // Ambil "lantai" secara adaptif sesuai struktur tabel locations
+        if (Schema::hasColumn('locations', 'jenis')) {
+            $lantais = Location::where('jenis', 'lantai')->orderBy('nama')->get(['id', 'nama']);
+        } elseif (Schema::hasColumn('locations', 'level')) {
+            $lantais = Location::where('level', 'lantai')->orderBy('nama')->get(['id', 'nama']);
+        } elseif (Schema::hasColumn('locations', 'type')) {
+            $lantais = Location::where('type', 'lantai')->orderBy('nama')->get(['id', 'nama']);
+        } else {
+            // Fallback umum: asumsikan root (lantai) adalah node tanpa parent
+            $lantais = Location::whereNull('parent_id')->orderBy('nama')->get(['id', 'nama']);
         }
 
-        $validated['status'] = 'menunggu';
-
-        Usulan::create($validated);
-
-        return redirect()->route('usulan.create')->with('success', 'Usulan berhasil dikirim.');
+        return view('usulan.create', compact('units', 'lantais'));
     }
-    public function setujui(Request $request)
-{
-    $request->validate([
-        'usulan_id' => 'required|exists:usulan,id',
-        'keterangan' => 'required|string',
-        'urgensi' => 'required|in:urgen,not_urgent',
-    ]);
 
-    DB::beginTransaction();
-    try {
-        // Update data di tabel usulan
-        $usulan = Usulan::findOrFail($request->usulan_id);
-        $usulan->status = 'disetujui';
-        $usulan->keterangan_persetujuan = $request->keterangan;
-        $usulan->urgensi = $request->urgensi;
-        $usulan->approved_by =Auth::user()->id;
-        $usulan->approved_at = now();
-        $usulan->save();
+    /**
+     * Simpan usulan baru dari staf.
+     * - Validasi: UsulanStoreRequest (wajib: alasan_pengusulan)
+     * - Status awal: menunggu_kepala_unit
+     * - Set created_by: id user yang login
+     * - Notifikasi: kirim ke semua user role 'kepala_unit'
+     */
+    public function store(UsulanStoreRequest $request)
+    {
+        $data = $request->validated();
 
-        // Simpan log
-        LogUsulan::create([
-            'usulan_id' => $usulan->id,
-            'user_id' => Auth::user()->id,
-            'action' => 'disetujui',
-            'keterangan' => $request->keterangan,
-            'created_at' => now(),
-        ]);
+        // Upload gambar (opsional)
+        if ($request->hasFile('gambar')) {
+            $data['gambar'] = $request->file('gambar')->store('usulan', 'public');
+        }
 
-        DB::commit();
+        // Hitung total_perkiraan jika ada harga
+        if (!empty($data['harga_perkiraan'])) {
+            $data['total_perkiraan'] = ((int) ($data['jumlah'] ?? 0)) * ((int) $data['harga_perkiraan']);
+        }
 
-        return response()->json(['message' => 'Usulan berhasil disetujui.']);
+        // Status awal tiga level + pencatat pembuat
+        $data['status']     = 'menunggu_kepala_unit';
+        $data['created_by'] = Auth::id();
 
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return response()->json(['message' => 'Gagal menyetujui usulan.'], 500);
+        DB::transaction(function () use ($data) {
+            $usulan = Usulan::create($data);
+
+            // Kirim notifikasi ke semua Kepala Unit
+            $kepalaUnits = User::where('role', 'kepala_unit')->get();
+            foreach ($kepalaUnits as $user) {
+                $user->notify(new UsulanNotification(
+                    usulanId:   $usulan->id,
+                    judul:      'Usulan baru menunggu Kepala Unit',
+                    pesan:      'Usulan "' . $usulan->nama_barang . '" menunggu persetujuan Anda.',
+                    statusBaru: 'menunggu_kepala_unit',
+                    byUserId:   Auth::id(),
+                    byUserName: Auth::user()->name
+                ));
+            }
+        });
+
+        return redirect()
+            ->route('home')
+            ->with('success', 'Usulan berhasil dibuat dan dikirim ke Kepala Unit.');
     }
-}
-    
 }

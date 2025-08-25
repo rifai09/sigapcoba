@@ -11,33 +11,31 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
+    /** ATTRIBUTES */
     protected $fillable = [
         'name',
         'email',
         'password',
+        // 'role', // <-- hanya aktifkan jika memang Anda punya kolom role di tabel users
     ];
 
-    /**
-     * The attributes that should be hidden for arrays.
-     *
-     * @var array
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * The attributes that should be cast to native types.
-     *
-     * @var array
-     */
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    /** RELATIONS */
+    public function approvalLogs()
+    {
+        return $this->hasMany(\App\Models\ApprovalLog::class);
+    }
+
+    // (Opsional) Helper sederhana jika Anda punya kolom 'role' di tabel users
+    // public function isKepalaUnit(): bool { return $this->role === 'kepala_unit'; }
+    // public function isKatimker(): bool    { return $this->role === 'katimker'; }
+    // public function isKabid(): bool       { return $this->role === 'kabid'; }
 }
