@@ -6,7 +6,7 @@ use App\Http\Controllers\PersetujuanController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\NotificationController;
 
-Route::get('/', fn () => view('welcome'));
+Route::get('/', fn () => view('auth.login'));
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])
     ->name('home');
