@@ -8,8 +8,8 @@ class UsulanStoreRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Akses sudah dibatasi oleh middleware auth/role di routes
-        return true;
+        // Pastikan user login
+        return auth()->check();
     }
 
     /**
@@ -36,9 +36,9 @@ class UsulanStoreRequest extends FormRequest
         return [
             // Data pokok
             'nama_barang'         => ['required','string','max:255'],
-            'spesifikasi'         => ['required','string'],
-            'alasan_pengusulan'   => ['required','string','min:10'],
-            'keterangan'          => ['nullable','string'],
+            'spesifikasi'         => ['required','string','min:5','max:2000'],
+            'alasan_pengusulan'   => ['required','string','min:10','max:3000'],
+            'keterangan'          => ['nullable','string','max:2000'],
 
             // File (opsional)
             'gambar'              => ['nullable','image','mimes:jpg,jpeg,png,webp','max:2048'],
@@ -53,7 +53,7 @@ class UsulanStoreRequest extends FormRequest
             'unit_id'             => ['required','integer','exists:units,id'],
             'lantai_id'           => ['required','integer','exists:locations,id'],
             'ruang_id'            => ['required','integer','exists:locations,id'],
-            'sub_ruang_id'        => ['required','integer','exists:locations,id'],
+            'sub_ruang_id'        => ['nullable','integer','exists:locations,id'], // boleh kosong
         ];
     }
 
@@ -81,6 +81,7 @@ class UsulanStoreRequest extends FormRequest
         return [
             'alasan_pengusulan.min' => 'Alasan pengusulan minimal :min karakter.',
             'gambar.max'            => 'Ukuran gambar maksimal 2MB.',
+            'sub_ruang_id.exists'   => 'Sub ruang tidak valid.',
         ];
     }
 }

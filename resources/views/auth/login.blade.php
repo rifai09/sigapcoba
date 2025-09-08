@@ -35,7 +35,7 @@
 
     /* Right Panel (form) */
     .right-panel {
-      flex: 1;
+      /* flex: 1; */
       background: white;
       display: flex;
       flex-direction: column;
@@ -191,8 +191,8 @@
       </div>
 
       <div class="login-content">
-        <h1 class="welcome-title">Holla,<br>Welcome Back</h1>
-        <p class="welcome-subtitle">Hey, welcome back to your special place</p>
+        <h1 class="welcome-title">Hello,<br>Welcome to</h1>
+        <p class="welcome-subtitle">Sistem Informasi Pengajuan Perencanaan (SIGAP)</p>
 
         <form action="{{ route('login') }}" method="post">
           @csrf
