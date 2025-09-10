@@ -8,9 +8,11 @@ use App\Models\Unit;
 use App\Models\Location;
 use App\Models\User;
 use App\Notifications\UsulanNotification;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Http\Response;
 
 class UsulanController extends Controller
 {
@@ -83,5 +85,58 @@ class UsulanController extends Controller
         return redirect()
             ->route('home')
             ->with('success', 'Usulan berhasil dibuat dan dikirim ke Kepala Unit.');
+    }
+
+    /**
+     * Tampilkan riwayat usulan (untuk modal di dashboard).
+     * Aturan akses:
+     * - Staf: hanya boleh melihat usulannya sendiri (created_by == auth()->id()).
+     * - Approver/Admin: kepala_unit / katimker / kabid / admin boleh melihat semua sesuai kewenangan umum.
+     */
+    public function riwayat($id, Request $request)
+    {
+        $user = Auth::user();
+
+        $usulan = Usulan::with([
+                'unit:id,nama',
+                'lantai:id,nama',
+                'ruang:id,nama',
+                'subRuang:id,nama',
+                'approvalLogs' => function ($q) {
+                    $q->orderBy('created_at');
+                },
+                'approvalLogs.approver:id,name'
+            ])
+            ->findOrFail($id);
+
+        // Cek role staf
+        $isStaf = method_exists($user, 'hasRole')
+            ? $user->hasRole('staf')
+            : (strtolower($user->role ?? '') === 'staf');
+
+        if ($isStaf && (int)$usulan->created_by !== (int)$user->id) {
+            abort(Response::HTTP_FORBIDDEN, 'Anda tidak berwenang melihat riwayat usulan ini.');
+        }
+
+        if (!$isStaf) {
+            $allowed = false;
+            if (method_exists($user, 'hasRole')) {
+                $allowed = $user->hasRole('kepala_unit')
+                    || $user->hasRole('katimker')
+                    || $user->hasRole('kabid')
+                    || $user->hasRole('admin');
+            } else {
+                $role = strtolower((string)($user->role ?? ''));
+                $allowed = in_array($role, ['kepala_unit','katimker','kabid','admin'], true);
+            }
+            if (!$allowed) {
+                abort(Response::HTTP_FORBIDDEN, 'Anda tidak berwenang melihat riwayat usulan ini.');
+            }
+        }
+
+        return view('usulan.partials.riwayat', [
+            'usulan' => $usulan,
+            'logs'   => $usulan->approvalLogs,
+        ]);
     }
 }

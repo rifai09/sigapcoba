@@ -5,13 +5,29 @@ use App\Http\Controllers\UsulanController;
 use App\Http\Controllers\PersetujuanController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\Auth\SSOLoginController;
 
-Route::get('/', fn () => view('auth.login'));
+Route::prefix('login/sso')->group(function () {
+    Route::get('/', [SSOLoginController::class, 'redirectToKeycloak'])->name('sso.redirect');
+    Route::get('/callback', [SSOLoginController::class, 'handleKeycloakCallback'])->name('sso.callback');
+});
 
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])
-    ->name('home');
+// Halaman root → redirect ke dashboard bila login, atau ke login bila guest
+Route::middleware(['sso.auth'])->group(function () {
+    Route::get('/', function () {
+        return auth()->check()
+            ? redirect()->route('home')
+            : view('auth.login');
+    });
+});
 
-Route::middleware(['auth'])->group(function () {
+// Dashboard (role-based)
+Route::get('/home', [HomeController::class, 'index'])
+    ->name('home')
+    ->middleware('sso.auth', 'anyauth');
+
+Route::middleware(['sso.auth', 'anyauth'])->group(function () {
 
     // === STAF: Form Usulan ===
     Route::get('/usulan/create', [UsulanController::class, 'create'])
@@ -40,9 +56,9 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('role:kepala_unit,katimker,kabid,admin')
         ->name('persetujuan.index');
 
-    // histori logs (modal detail)
+    // histori logs (modal detail) — kini termasuk 'staf'
     Route::get('/persetujuan/logs/{id}', [PersetujuanController::class, 'getLogs'])
-        ->middleware('role:kepala_unit,katimker,kabid,admin')
+        ->middleware('role:kepala_unit,katimker,kabid,admin,staf')
         ->name('persetujuan.logs');
 
     // Kepala Unit
@@ -79,3 +95,21 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])
         ->name('notifications.readAll');
 });
+
+require __DIR__ . '/auth.php';
+
+// Route::any('{any}', function (\Illuminate\Http\Request $request) {
+//   dd([
+//       'uri' => $request->getRequestUri(),
+//       'path' => $request->path(),
+//       'fullUrl' => $request->fullUrl(),
+//   ]);
+// })->where('any', '.*');
+// Route::get('/test-auth', function () {
+//   return [
+//       'auth_check' => Auth::check(),
+//       'guard' => Auth::getDefaultDriver(),
+//       'user' => Auth::user(),
+//       'session' => session()->all(),
+//   ];
+// });

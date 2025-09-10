@@ -112,9 +112,20 @@ class PersetujuanController extends Controller
     /**
      * JSON histori persetujuan untuk modal (Step 8).
      * Return: role, status, prioritas, catatan, created_at, user_name
+     *
+     * Penyesuaian: staf hanya boleh melihat log usulannya sendiri.
      */
     public function getLogs(Usulan $id)
     {
+        // ===== Guard untuk staf: hanya boleh melihat usulannya sendiri =====
+        $user = Auth::user();
+        if (($user->role ?? null) === 'staf') {
+            if ((int)$id->created_by !== (int)$user->id) {
+                abort(403, 'Anda tidak berwenang melihat riwayat usulan ini.');
+            }
+        }
+        // ===================================================================
+
         $logs = ApprovalLog::with('user:id,name')
             ->where('usulan_id', $id->id)
             ->orderBy('created_at','asc')
