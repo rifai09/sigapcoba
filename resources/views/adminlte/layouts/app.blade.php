@@ -12,6 +12,11 @@
   <!-- Theme style -->
   <link rel="stylesheet" href="{{ asset('assets/dist/css/adminlte.min.css') }}">
 
+  <!-- ===== Select2 CSS (searchable dropdown) ===== -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+  <!-- Theme Bootstrap4 untuk Select2 (match AdminLTE) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.6.4/dist/select2-bootstrap4.min.css">
+
   {{-- Wajib: CSRF untuk AJAX POST --}}
   <meta name="csrf-token" content="{{ csrf_token() }}">
 
@@ -154,6 +159,9 @@
     <script src="{{ asset('assets/plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <!-- AdminLTE App -->
     <script src="{{ asset('assets/dist/js/adminlte.min.js') }}"></script>
+
+    <!-- ===== Select2 JS ===== -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     {{-- Tempat script tambahan dari halaman/partial --}}
     @stack('scripts')
