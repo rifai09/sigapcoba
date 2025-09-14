@@ -7,6 +7,7 @@ use App\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Carbon;
 
 class HomeController extends Controller
 {
@@ -33,14 +34,15 @@ class HomeController extends Controller
          */
         $has = fn(string $col) => Schema::hasColumn('usulans', $col);
 
-        $hasStatus  = $has('status');              // global status
-        $hasCreated = $has('created_by');          // id pembuat (staf)
-        $hasUnitId  = $has('unit_id');             // unit filter admin
-        $hasHarga   = $has('harga_perkiraan');     // harga satuan perkiraan
-        $hasTotal   = $has('total_perkiraan');     // total = jumlah * harga (bila ada)
-        $hasKU      = $has('kepala_unit_status');  // approved|rejected|null
-        $hasKT      = $has('katimker_status');
-        $hasKB      = $has('kabid_status');
+        $hasStatus   = $has('status');               // global status
+        $hasCreated  = $has('created_by');           // id pembuat (staf)
+        $hasUnitId   = $has('unit_id');              // unit filter admin
+        $hasHarga    = $has('harga_perkiraan');      // harga satuan perkiraan
+        $hasTotal    = $has('total_perkiraan');      // total = jumlah * harga (bila ada)
+        $hasKU       = $has('kepala_unit_status');   // approved|rejected|null
+        $hasKT       = $has('katimker_status');
+        $hasKB       = $has('kabid_status');
+        $hasKabidAt  = $has('kabid_at');             // waktu keputusan final kabid (untuk lead time)
 
         /**
          * =============== Base query per periode =================
@@ -56,7 +58,7 @@ class HomeController extends Controller
                 $base->where('unit_id', $request->integer('unit_id'));
             }
         } else {
-            // kepala_unit / katimker / kabid: lihat semua (atau sesuaikan sesuai kebutuhanmu)
+            // kepala_unit / katimker / kabid / pengadaan: lihat semua (atau sesuaikan sesuai kebutuhanmu)
         }
 
         /**
@@ -98,12 +100,49 @@ class HomeController extends Controller
             $nilai_total_disetujui = 0;
         }
 
+        /**
+         * =============== Lead Time Rata-rata (Hari) =================
+         * Hitung untuk usulan final approved (adaptif), hanya jika kabid_at tersedia & terisi.
+         * Rumus: rata-rata (kabid_at - created_at) dalam hari (dibulatkan 1 desimal).
+         */
+        $lead_time_avg = null;
+        if ($hasKabidAt) {
+            $approvedDates = (clone $approvedQ)
+                ->whereNotNull('kabid_at')
+                ->get(['created_at', 'kabid_at']);
+
+            $totalDays = 0.0;
+            $countDays = 0;
+
+            foreach ($approvedDates as $row) {
+                try {
+                    $created = $row->created_at instanceof Carbon ? $row->created_at : Carbon::parse($row->created_at);
+                    $kabidAt = $row->kabid_at   instanceof Carbon ? $row->kabid_at   : Carbon::parse($row->kabid_at);
+                    if ($kabidAt && $created && $kabidAt->greaterThanOrEqualTo($created)) {
+                        // gunakan diffInHours/24 agar dapat pecahan hari lebih halus
+                        $hours = $kabidAt->floatDiffInHours($created);
+                        $days  = $hours / 24.0;
+                        $totalDays += $days;
+                        $countDays++;
+                    }
+                } catch (\Throwable $e) {
+                    // skip baris yang tidak valid
+                }
+            }
+
+            if ($countDays > 0) {
+                // bulatkan 1 desimal
+                $lead_time_avg = round($totalDays / $countDays, 1);
+            }
+        }
+
         $cards = [
             'total'                 => $total,
             'menunggu'              => $menunggu,
             'disetujui'             => $disetujui,
             'ditolak'               => $ditolak,
             'nilai_total_disetujui' => $nilai_total_disetujui,
+            'lead_time_avg'         => $lead_time_avg, // <— kartu baru
         ];
 
         /**

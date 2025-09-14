@@ -7,13 +7,20 @@ use App\Http\Controllers\LocationController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Auth\SSOLoginController;
+use App\Http\Controllers\ReportController;
 
+/**
+ * ========== SSO ==========
+ */
 Route::prefix('login/sso')->group(function () {
     Route::get('/', [SSOLoginController::class, 'redirectToKeycloak'])->name('sso.redirect');
     Route::get('/callback', [SSOLoginController::class, 'handleKeycloakCallback'])->name('sso.callback');
 });
 
-// Halaman root → redirect ke dashboard bila login, atau ke login bila guest
+/**
+ * ========== Root ==========
+ * Jika sudah login → redirect ke dashboard, else → halaman login
+ */
 Route::middleware(['sso.auth'])->group(function () {
     Route::get('/', function () {
         return auth()->check()
@@ -22,11 +29,16 @@ Route::middleware(['sso.auth'])->group(function () {
     });
 });
 
-// Dashboard (role-based)
+/**
+ * ========== Dashboard ==========
+ */
 Route::get('/home', [HomeController::class, 'index'])
     ->name('home')
     ->middleware('sso.auth', 'anyauth');
 
+/**
+ * ========== Area Terproteksi (wajib SSO & logged in) ==========
+ */
 Route::middleware(['sso.auth', 'anyauth'])->group(function () {
 
     // === STAF: Form Usulan ===
@@ -56,7 +68,7 @@ Route::middleware(['sso.auth', 'anyauth'])->group(function () {
         ->middleware('role:kepala_unit,katimker,kabid,admin')
         ->name('persetujuan.index');
 
-    // histori logs (modal detail) — kini termasuk 'staf'
+    // histori logs (modal detail) — staf boleh akses untuk riwayat usulannya sendiri (dibatasi di controller)
     Route::get('/persetujuan/logs/{id}', [PersetujuanController::class, 'getLogs'])
         ->middleware('role:kepala_unit,katimker,kabid,admin,staf')
         ->name('persetujuan.logs');
@@ -94,22 +106,37 @@ Route::middleware(['sso.auth', 'anyauth'])->group(function () {
 
     Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])
         ->name('notifications.readAll');
+
+    // === LAPORAN (Admin & Pengadaan) ===
+    Route::prefix('laporan')->middleware(['role:pengadaan,admin'])->group(function () {
+
+        // Daftar usulan yang telah disetujui final (Kabid)
+        Route::get('/approved', [ReportController::class, 'index'])
+            ->name('reports.approved');
+
+        // Preview (HTML untuk lihat/print di browser)
+        Route::get('/approved/preview', [ReportController::class, 'previewPdf'])
+            ->name('reports.approved.preview');
+
+        // Export Excel (CSV ramah-Excel)
+        Route::get('/approved/export-excel', [ReportController::class, 'exportExcel'])
+            ->name('reports.approved.excel');
+
+        // Export PDF (download via Dompdf)
+        Route::get('/approved/export-pdf', [ReportController::class, 'exportPdf'])
+            ->name('reports.approved.pdf');
+    });
 });
 
 require __DIR__ . '/auth.php';
 
-// Route::any('{any}', function (\Illuminate\Http\Request $request) {
-//   dd([
-//       'uri' => $request->getRequestUri(),
-//       'path' => $request->path(),
-//       'fullUrl' => $request->fullUrl(),
-//   ]);
-// })->where('any', '.*');
-// Route::get('/test-auth', function () {
-//   return [
-//       'auth_check' => Auth::check(),
-//       'guard' => Auth::getDefaultDriver(),
-//       'user' => Auth::user(),
-//       'session' => session()->all(),
-//   ];
-// });
+/*
+// Debug helper
+Route::any('{any}', function (\Illuminate\Http\Request $request) {
+  dd([
+      'uri' => $request->getRequestUri(),
+      'path' => $request->path(),
+      'fullUrl' => $request->fullUrl(),
+  ]);
+})->where('any', '.*');
+*/
