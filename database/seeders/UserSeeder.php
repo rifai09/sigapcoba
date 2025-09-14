@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     */
     public function run(): void
     {
         $users = [
@@ -46,8 +49,8 @@ class UserSeeder extends Seeder
 
         foreach ($users as $user) {
             User::updateOrCreate(
-                ['email' => $user['email']], 
-                $user 
+                ['email' => $user['email']],
+                $user
             );
         }
     }
